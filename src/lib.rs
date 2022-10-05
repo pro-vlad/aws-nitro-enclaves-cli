@@ -28,6 +28,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::unix::net::UnixStream;
 use std::path::PathBuf;
+use tokio::runtime::Runtime;
 
 use common::commands_parser::{
     BuildEnclavesArgs, DescribeArgs, EmptyArgs, RunEnclavesArgs, SignArgs,
@@ -81,7 +82,11 @@ pub fn sign_eif_file(args: SignArgs) -> NitroCliResult<()> {
                 NitroCliErrorEnum::EifParsingError
             )
         })?;
-    signer.sign_image().expect("Failed signing");
+    let act = async {
+        signer.sign_image().await.expect("Failed signing");
+    };
+    let runtime = Runtime::new().unwrap();
+    runtime.block_on(act);
     Ok(())
 }
 
